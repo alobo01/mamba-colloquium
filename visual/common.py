@@ -1,9 +1,8 @@
-"""Shared palette and mobject helpers for every slide (Appendix A of the script)."""
+"""Shared look and helpers for the compact talk (16 scenes, ~5 min)."""
 
 from manim import *
 import numpy as np
-
-import os
+import os, pathlib, re
 
 # Video export uses plain Scenes. Set MANIM_DECK=slides when running
 # `manim-slides render` to get click-stepped presentations instead.
@@ -11,135 +10,179 @@ _Slide, _ThreeDSlide = Scene, ThreeDScene
 if os.environ.get("MANIM_DECK") == "slides":
     from manim_slides import Slide as _Slide, ThreeDSlide as _ThreeDSlide
 
-BG = "#11141C"
-RESID = "#F2F2F2"
-TOKEN = "#D8D5CD"
-Q_COL = "#3AD5D0"
-K_COL = "#B78CFF"
-V_COL = "#FFD166"
-ATTN = "#4F8EF7"
-MAMBA = "#F28C6B"
-MAMBA2 = "#69D6B4"
-MOE = "#F2C14E"
-FADE = "#747D8C"
-
-config.background_color = BG
-FONT = "DejaVu Sans"
-
-BADGE_COLORS = {"IDENTITY": RESID, "PROPERTY": ATTN, "SCHEMATIC": FADE, "MEASURED": MOE}
+# Manim 0.19 pastes image mobjects onto Image.fromarray(zeros(h, w), mode="RGBA"), which newer
+# Pillow rejects; building the blank canvas with Image.new is equivalent.
+import PIL.Image as _PI
+_fromarray = _PI.fromarray
 
 
-def T(text, size=28, color=RESID, **kw):
-    return Text(text, font=FONT, font_size=size, color=color, **kw)
+def _fromarray_compat(obj, mode=None):
+    if mode == "RGBA" and getattr(obj, "ndim", 0) == 2:
+        return _PI.new("RGBA", (obj.shape[1], obj.shape[0]))
+    return _fromarray(obj, mode=mode)
+
+
+_PI.fromarray = _fromarray_compat
+
+# ------------------------------------------------------------------ palette
+BG0, BG1 = "#1B2338", "#090B12"          # centre / edge of the backdrop
+RESID = "#F4F6FA"                         # residual stream, main text
+TOKEN = "#CFD6E4"
+Q_COL = "#35D6D0"
+K_COL = "#B48CFF"
+V_COL = "#FFCB57"
+ATTN = "#5B9BFF"                          # Theo
+MAMBA = "#FF8A65"                         # Manu
+MAMBA2 = "#5EE0B0"                        # Max
+MOE = "#FFC857"
+FIN = "#FF6FA8"                           # "bank" = money
+RIVER = "#4DB6FF"                         # "bank" = river
+FADE = "#7C879B"
+SOFT = "#26304A"                          # card fill / dim
+
+config.background_color = BG1
+FONT = "Inter"
+TOTAL_SCENES = 16
+
+
+def T(text, size=28, color=RESID, bold=False, **kw):
+    return Text(text, font=FONT, font_size=size, color=color, weight=BOLD if bold else NORMAL, **kw)
 
 
 def M(*tex, size=40, color=RESID, **kw):
     return MathTex(*tex, font_size=size, color=color, **kw)
 
 
-class _PauseMixin:
-    """`pause()` = one presenter click in the deck, a short hold in the video."""
+# --------------------------------------------------------------- background
+def _backdrop():
+    path = pathlib.Path(__file__).resolve().parents[1] / "media" / "backdrop.png"
+    if not path.exists():
+        from PIL import Image
+        path.parent.mkdir(parents=True, exist_ok=True)
+        W, H = 1920, 1080
+        y, x = np.mgrid[0:H, 0:W]
+        r = np.sqrt(((x / W - 0.5) * 1.5) ** 2 + (y / H - 0.5) ** 2)
+        r = np.clip(r / 0.85, 0, 1)[..., None]
+        c0 = np.array([int(BG0[i:i + 2], 16) for i in (1, 3, 5)])
+        c1 = np.array([int(BG1[i:i + 2], 16) for i in (1, 3, 5)])
+        img = c0 * (1 - r) + c1 * r
+        dots = ((x % 64 == 32) & (y % 64 == 32))[..., None]       # faint dot grid
+        img = np.where(dots, img + 14, img)
+        Image.fromarray(np.clip(img, 0, 255).astype("uint8")).convert("RGBA").save(path)
+    im = ImageMobject(str(path))
+    im.scale_to_fit_width(config.frame_width).set_z_index(-100)
+    return im
 
-    def pause(self, t=0.8):
+
+class _DeckMixin:
+    """`pause()` = one presenter click in the live deck, a short hold in the video."""
+
+    def setup(self):
+        super().setup()
+        self._chrome = Group(_backdrop())
+        m = re.match(r"S(\d+)", type(self).__name__)
+        if m:
+            i = int(m.group(1))
+            dots = VGroup(*[Circle(radius=0.07 if k + 1 == i else 0.04, stroke_width=0,
+                                   fill_color=RESID if k + 1 == i else FADE,
+                                   fill_opacity=1 if k + 1 <= i else 0.35) for k in range(TOTAL_SCENES)])
+            dots.arrange(RIGHT, buff=0.2).to_edge(DOWN, buff=0.18).set_z_index(50)
+            self._chrome.add(dots)
+        self.add(self._chrome)
+
+    def pause(self, t=0.9):
         self.wait(t)
         if hasattr(self, "next_slide"):
             self.next_slide()
 
-    def header(self, number, title, act=None, badge=None):
-        t = T(f"{number}  {title}", 34)
-        if t.width > 10.8:
-            t.scale_to_fit_width(10.8)
-        t.to_edge(UP, buff=0.35).to_edge(LEFT, buff=0.5)
-        grp = VGroup(t)
-        if act:
-            grp.add(T(act, 18, FADE).next_to(t, DOWN, aligned_edge=LEFT, buff=0.1))
-        if badge:
-            grp.add(evidence_badge(badge).to_corner(UR, buff=0.35))
-        self.play(FadeIn(grp, shift=DOWN * 0.2), run_time=0.8)
-        return grp
-
-    def caption(self, text, color=RESID, size=26):
-        c = T(text, size, color).to_edge(DOWN, buff=0.4)
-        self.play(FadeIn(c, shift=UP * 0.2), run_time=0.6)
-        return c
-
-    def dont_say(self, text):
-        box = VGroup(T("⚠ Don't say: " + text, 20, MAMBA))
-        rect = SurroundingRectangle(box, color=MAMBA, buff=0.15, corner_radius=0.1)
-        g = VGroup(rect, box).to_edge(DOWN, buff=0.25)
-        self.play(FadeIn(g), run_time=0.6)
+    def title(self, text, color=RESID, accent=None):
+        t = T(text, 42, color, bold=True).to_corner(UL, buff=0.5)
+        bar = RoundedRectangle(width=1.0, height=0.08, corner_radius=0.04, stroke_width=0,
+                               fill_color=accent or color, fill_opacity=1).next_to(t, DOWN, buff=0.14, aligned_edge=LEFT)
+        g = VGroup(t, bar)
+        self.play(FadeIn(g, shift=RIGHT * 0.3), run_time=0.7)
         return g
 
     def clear_all(self, run_time=0.6):
-        if self.mobjects:
-            self.play(*[FadeOut(m) for m in self.mobjects], run_time=run_time)
+        gone = [m for m in self.mobjects if m not in self._chrome.submobjects and m is not self._chrome
+                and not any(m in c.get_family() for c in self._chrome.submobjects)]
+        if gone:
+            self.play(*[FadeOut(m) for m in gone], run_time=run_time)
 
 
-class Deck(_PauseMixin, _Slide):
+class Deck(_DeckMixin, _Slide):
     pass
 
 
-class Deck3D(_PauseMixin, _ThreeDSlide):
+class Deck3D(_DeckMixin, _ThreeDSlide):
     pass
 
 
-def evidence_badge(kind):
-    col = BADGE_COLORS[kind]
-    label = T(kind, 16, col)
-    rect = RoundedRectangle(width=label.width + 0.35, height=0.4, corner_radius=0.18,
-                            stroke_color=col, stroke_width=2)
-    if kind == "SCHEMATIC":
-        rect = DashedVMobject(rect, num_dashes=24)
-    return VGroup(rect, label.move_to(rect))
+# ------------------------------------------------------------------ shapes
+def glow(mob, color=None, layers=4, base=2.0, spread=3.0, opacity=0.13):
+    """Soft halo behind a shape (stroke-only copies, widest first)."""
+    g = VGroup()
+    for i in range(layers, 0, -1):
+        c = mob.copy().set_fill(opacity=0).set_stroke(color or mob.get_color(), width=base + spread * i, opacity=opacity)
+        g.add(c)
+    return g
 
 
-def token_card(text, w=1.15, h=1.3, key=K_COL, val=V_COL, size=20):
-    body = RoundedRectangle(width=w, height=h, corner_radius=0.08, stroke_color=TOKEN,
-                            stroke_width=2, fill_color=val, fill_opacity=0.18)
-    strip = Rectangle(width=w, height=0.32, stroke_width=0, fill_color=key, fill_opacity=0.85)
-    strip.align_to(body, UP)
-    label = T(text, size, RESID).move_to(body).shift(DOWN * 0.1)
+def card(w, h, color=ATTN, fill=0.16, radius=0.2, sw=2.5):
+    return RoundedRectangle(width=w, height=h, corner_radius=radius, stroke_color=color, stroke_width=sw,
+                            fill_color=color, fill_opacity=fill)
+
+
+def pill(text, color=ATTN, size=20, filled=False, pad=0.28):
+    t = T(text, size, BG1 if filled else color, bold=True)
+    r = RoundedRectangle(width=t.width + pad * 2, height=t.height + 0.3, corner_radius=0.25,
+                         stroke_color=color, stroke_width=2.5, fill_color=color, fill_opacity=1 if filled else 0.14)
+    return VGroup(r, t.move_to(r))
+
+
+def chip(text, color=TOKEN, size=20):
+    t = T(text, size, color)
+    r = RoundedRectangle(width=t.width + 0.4, height=0.55, corner_radius=0.16, stroke_color=color,
+                         stroke_width=2, fill_color=color, fill_opacity=0.1)
+    return VGroup(r, t.move_to(r))
+
+
+def token_card(text, w=1.2, h=1.35, key=K_COL, val=V_COL, size=20):
+    body = RoundedRectangle(width=w, height=h, corner_radius=0.12, stroke_color=TOKEN, stroke_width=2,
+                            fill_color=val, fill_opacity=0.16)
+    strip = Rectangle(width=w - 0.04, height=0.3, stroke_width=0, fill_color=key, fill_opacity=0.9)
+    strip.move_to(body.get_top() + DOWN * 0.17)
+    label = T(text, size, RESID).move_to(body).shift(DOWN * 0.12)
     return VGroup(body, strip, label)
 
 
-def token_square(text, size=0.7, color=TOKEN, fs=18):
-    sq = RoundedRectangle(width=max(size, 0.22 * len(text) + 0.3), height=size, corner_radius=0.08,
-                          stroke_color=color, stroke_width=2)
-    return VGroup(sq, T(text, fs, color).move_to(sq))
+def vec(n=4, color=ATTN, cell=0.17, vals=None, horizontal=False):
+    vals = np.linspace(0.3, 1, n) if vals is None else vals
+    g = VGroup(*[Square(cell, stroke_color=color, stroke_width=1.2, fill_color=color, fill_opacity=float(v)) for v in vals])
+    return g.arrange(RIGHT if horizontal else DOWN, buff=0.02)
 
 
-def brother(name, color, prop):
-    head = Circle(radius=0.35, stroke_color=color, stroke_width=4)
-    body = Arc(radius=0.6, start_angle=0, angle=PI, stroke_color=color, stroke_width=4)
-    body.next_to(head, DOWN, buff=0.05)
-    if prop == "cards":
-        p = VGroup(*[Rectangle(width=0.28, height=0.38, stroke_color=color, stroke_width=2,
-                               fill_color=K_COL, fill_opacity=0.3) for _ in range(4)]).arrange(RIGHT, buff=0.05)
-    elif prop == "notebook":
-        p = VGroup(Rectangle(width=0.9, height=0.6, stroke_color=color, fill_color=color, fill_opacity=0.25),
-                   *[Line(LEFT * 0.35, RIGHT * 0.35, stroke_width=1.5, color=color).shift(UP * (0.15 - 0.15 * i))
-                     for i in range(3)])
-    else:  # ledger of tiles
-        p = VGroup(*[Square(0.2, stroke_color=color, stroke_width=2, fill_color=color, fill_opacity=0.35)
-                     for _ in range(6)]).arrange_in_grid(2, 3, buff=0.05)
-    p.next_to(body, DOWN, buff=0.12)
-    label = T(name, 24, color).next_to(p, DOWN, buff=0.15)
-    return VGroup(head, body, p, label)
+def arrow(start, end, color=RESID, sw=5, tip=0.18):
+    return Arrow(start, end, buff=0, color=color, stroke_width=sw, tip_length=tip,
+                 max_tip_length_to_length_ratio=0.35)
 
 
-def heatmap(data, cell=0.3, pos_color=MAMBA2, neg_color=MAMBA, zero_color="#1B2030", stroke=FADE):
+def heat(data, cell=0.34, pos=MAMBA2, zero="#1E2740", stroke="#0A0D15", numbers=False, nsize=14):
     data = np.asarray(data, dtype=float)
     n, m = data.shape
-    vmax = np.max(np.abs(data)) or 1.0
-    cells = VGroup()
+    vmax = np.abs(data).max() or 1.0
+    g = VGroup()
     for i in range(n):
         for j in range(m):
-            v = data[i, j] / vmax
-            col = interpolate_color(ManimColor(zero_color), ManimColor(pos_color if v >= 0 else neg_color), min(1, abs(v)))
-            cells.add(Square(cell, stroke_width=0.6, stroke_color=stroke, fill_color=col, fill_opacity=1)
-                      .move_to([j * cell, -i * cell, 0]))
-    cells.move_to(ORIGIN)
-    return cells
+            v = abs(data[i, j]) / vmax
+            col = interpolate_color(ManimColor(zero), ManimColor(pos), min(1, v))
+            sq = Square(cell, stroke_width=1, stroke_color=stroke, fill_color=col, fill_opacity=1)
+            sq.move_to([j * cell, -i * cell, 0])
+            g.add(sq)
+            if numbers and data[i, j] != 0:
+                g.add(T(f"{data[i, j]:.3g}".lstrip("0") if abs(data[i, j]) < 1 else f"{data[i, j]:.3g}", nsize,
+                        BG1 if v > 0.55 else RESID, bold=True).move_to(sq))
+    return g.move_to(ORIGIN)
 
 
 def causal_softmax(n, seed=0, temp=1.5):
@@ -150,12 +193,29 @@ def causal_softmax(n, seed=0, temp=1.5):
     return e / e.sum(axis=1, keepdims=True)
 
 
-def vec_arrow(start, end, color, sw=5):
-    return Arrow(start, end, buff=0, color=color, stroke_width=sw, max_tip_length_to_length_ratio=0.15)
-
-
-def bar_row(values, width=0.35, max_h=1.4, color=K_COL, buff=0.15):
-    bars = VGroup(*[Rectangle(width=width, height=max(0.02, max_h * v), stroke_width=0,
-                              fill_color=color, fill_opacity=0.9) for v in values])
-    bars.arrange(RIGHT, buff=buff, aligned_edge=DOWN)
-    return bars
+# --------------------------------------------------------------- characters
+def brother(name, color, prop, scale=1.0):
+    head = Circle(radius=0.36, stroke_width=0, fill_color="#F6E3D2", fill_opacity=1)
+    hair = Arc(radius=0.36, start_angle=0.15, angle=PI - 0.3, stroke_color=color, stroke_width=9)
+    eyes = VGroup(*[Dot(radius=0.045, color=BG1).move_to(head.get_center() + RIGHT * dx + UP * 0.03) for dx in (-0.13, 0.13)])
+    smile = Arc(radius=0.14, start_angle=PI * 1.15, angle=PI * 0.7, stroke_color=BG1, stroke_width=3)
+    smile.move_to(head.get_center() + DOWN * 0.1)
+    body = RoundedRectangle(width=1.05, height=0.95, corner_radius=0.32, stroke_width=0, fill_color=color, fill_opacity=0.95)
+    body.next_to(head, DOWN, buff=-0.06)
+    body.set_z_index(head.z_index - 1)
+    if prop == "cards":
+        p = VGroup(*[RoundedRectangle(width=0.3, height=0.42, corner_radius=0.05, stroke_color=BG1, stroke_width=1.5,
+                                      fill_color=c, fill_opacity=1).rotate(a)
+                     for c, a in zip((K_COL, V_COL, Q_COL, K_COL), (0.45, 0.15, -0.15, -0.45))]).arrange(RIGHT, buff=-0.12)
+    elif prop == "notebook":
+        p = VGroup(RoundedRectangle(width=0.7, height=0.5, corner_radius=0.06, stroke_color=BG1, stroke_width=1.5,
+                                    fill_color=RESID, fill_opacity=1),
+                   *[Line(LEFT * 0.22, RIGHT * 0.22, stroke_width=2, color=MAMBA).shift(UP * (0.12 - 0.12 * i)) for i in range(3)])
+        p[1:].move_to(p[0])
+    else:
+        p = VGroup(*[Square(0.17, stroke_color=BG1, stroke_width=1, fill_color=RESID, fill_opacity=0.95)
+                     for _ in range(6)]).arrange_in_grid(2, 3, buff=0.04)
+    p.move_to(body.get_center() + DOWN * 0.1).set_z_index(5)
+    lab = T(name, 24, color, bold=True).next_to(body, DOWN, buff=0.18)
+    g = VGroup(VGroup(body, head, hair, eyes, smile), p, lab)
+    return g.scale(scale)

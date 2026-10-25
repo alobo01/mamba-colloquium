@@ -1,11 +1,11 @@
 """Numerical contract for every SSD / attention identity shown on screen.
 
-Run before rendering any Act III or slide-24 scene:
+Run before rendering S06–S08 or S15:
 
     python -I math_contracts/test_ssd_equivalence.py      # plain
     python -m pytest math_contracts                         # or with pytest
 
-Conventions (one SSD head, matching PRESENTATION_VISUAL_SCRIPT.md):
+Conventions (one SSD head, matching TALK_SCRIPT.md):
     a : (T,)    scalar decay per step, S_t = a_t S_{t-1} + k_t v_t^T
     K : (T, N)  write vectors  (b_t in Mamba-2 notation)
     Q : (T, N)  read vectors   (c_t in Mamba-2 notation)

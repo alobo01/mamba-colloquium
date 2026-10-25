@@ -5,7 +5,7 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 q="${1:-m}"
 case "$q" in l) dir=480p15 ;; m) dir=720p30 ;; h) dir=1080p60 ;; *) echo "quality must be l, m or h"; exit 2 ;; esac
-files=(slides/act1_attention.py slides/act2_notebooks.py slides/act3_ssd.py slides/act4_clinic_belt.py slides/act5_theory.py)
+files=(slides/part1_attention.py slides/part2_mamba.py slides/part3_ffn_moe.py slides/part4_theory.py)
 python -m pytest -q math_contracts || { echo "math contract failed: not rendering"; exit 1; }
 status=0
 for f in "${files[@]}"; do
