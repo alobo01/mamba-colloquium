@@ -237,21 +237,19 @@ A line starting with **▶** is a click (`next_slide`); what follows it is what 
 ## Part 4 · The trade-off, and what theory says
 
 ## 13 · Real Transformers are cleverer than that
-**Idea:** A toolbox of tricks shrinks the cache, the attention cost or the memory traffic.
-**On screen:** ten tiles: name, who introduced it, where it ships.
+**Idea:** Ten tricks, grouped by how they work: share the cache, see fewer tokens, do the same maths with less memory traffic, reach further.
+**On screen:** four columns, one per mechanism. Each tile names the trick, who introduced it and where it ships.
 
 **Say:**
-"The model tricks:
-- **MQA** (Shazeer 2019, PaLM) and **GQA** (Ainslie et al. 2023, Llama 2 70B and Llama 3) share keys and values between heads, which shrinks the cache.
-- **Sliding windows** (Longformer, Mistral 7B) let each token see only recent tokens. Gemma 2 and 3 mix local and global layers.
-- **Attention sinks** (StreamingLLM) keep long streams stable.
-- **MLA** (DeepSeek-V2) compresses keys and values into a small latent.
+"Production Transformers are not the plain version. The tricks fall into four groups, by *what* they shrink."
 
-And the systems tricks:
-- **FlashAttention** computes exactly the same attention with far less memory traffic.
-- **PagedAttention** (vLLM) pages the cache.
-- **Sparse attention** (BigBird, DeepSeek NSA) skips most pairs.
-- **RoPE + YaRN** handle position and stretch the context."
+▶ "**Share the cache.** The KV cache is keys and values for every head. **MQA** (Shazeer 2019, PaLM) lets all query heads share one key/value head. **GQA** (Ainslie et al. 2023, Llama 2 70B and Llama 3) is the middle ground: groups of query heads share one. **MLA** (DeepSeek-V2) goes further and caches a small latent that is expanded back into keys and values. Same number of tokens remembered, fewer numbers per token."
+
+▶ "**See fewer tokens.** Change the mask instead. A **sliding window** (Longformer 2020, Mistral 7B) lets each token see only recent tokens. **Local + global** (Gemma 2 and 3) interleaves windowed layers with a few full ones. **Attention sinks** (StreamingLLM) keep the first few tokens plus a window, which keeps long streams stable. **Sparse attention** (BigBird, DeepSeek's NSA) keeps a chosen subset of pairs. All four shrink the triangle from slide 3."
+
+▶ "**Same maths, less traffic.** These change nothing about the result. **FlashAttention** (Dao et al.) computes exactly the same attention, tile by tile, without writing the full score matrix to memory. It is still quadratic compute. **PagedAttention** (vLLM) stores the cache in fixed-size pages, like an operating system, so serving many requests wastes little memory."
+
+▶ "**Reach further.** **RoPE** (Su 2021) encodes position as a rotation of queries and keys. **YaRN** (Peng 2023) rescales those rotations so a model trained on short contexts works on longer ones. Notice the left two columns attack exactly the costs Mamba avoids: cache size and the T² triangle."
 
 **Bridge:** "So how much does the bill actually differ in practice?"
 

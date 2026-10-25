@@ -48,7 +48,7 @@ Write equation parts atomically, as in `ceq("S_t", "=", "a_t", "S_{t-1}", "+", "
 | `slides/s10_moe.py` | `S10MoE` | MoE as a hospital: a triage nurse (router) opens 2 of 8 specialist rooms per patient (token). | `animate_routing` |
 | `slides/s11_moe_production.py` | `S11MoEProduction` | How modern LLMs run MoE: shared + fine-grained experts, load balancing, expert parallelism. | `animate_fine_grained`, `animate_balancing`, `animate_expert_parallel` |
 | `slides/s12_bus.py` | `S12Bus` | The residual stream is one shared bus; the Mamba state runs along time instead. | `animate_belt`, `animate_two_axes` |
-| `slides/s13_toolbox.py` | `S13Toolbox` | Real Transformers are cleverer: ten tricks, who introduced them, who uses them. |  |
+| `slides/s13_toolbox.py` | `S13Toolbox` | Real Transformers are cleverer: ten tricks grouped by how they work. | `animate_column` |
 | `slides/s14_measured_cost.py` | `S14MeasuredCost` | The bill, measured: Transformer ÷ Mamba memory and time as the context doubles. | `animate_bars`, `animate_oom`, `animate_why` |
 | `slides/s15_recall.py` | `S15Recall` | Recall needs memory that grows: a phone book into a wall vs into a fixed notebook. | `animate_stream`, `animate_store`, `animate_query`, `animate_bound` |
 | `slides/s16_hybrids.py` | `S16Hybrids` | Neither pure model is cheap: function composition and why hybrids win. | `animate_task`, `animate_window`, `animate_hybrid`, `animate_results` |
