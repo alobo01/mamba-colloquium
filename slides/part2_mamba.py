@@ -22,10 +22,10 @@ class S05Ladder(Deck):
         flat = ax.plot(lambda x: 1.2, x_range=[0, 10], color=MAMBA, stroke_width=6)
         self.play(Create(ax), FadeIn(xl))
         for k in range(10):
-            c = token_card("", w=0.5, h=0.65).move_to(theo.get_top() + UP * 0.6 + RIGHT * (0.45 * (k % 5)) + UP * (0.7 * (k // 5)) + LEFT * 0.6)
+            c = token_card("", w=0.5, h=0.65).move_to(theo.get_top() + UP * 0.95 + RIGHT * (0.45 * (k % 5)) + UP * (0.7 * (k // 5)) + LEFT * 0.6)
             wall.add(c)
         self.play(LaggedStart(*[FadeIn(c, scale=0.6) for c in wall], lag_ratio=0.1), Create(quad), run_time=2.2)
-        qlab = T("attention", 22, ATTN, bold=True).next_to(quad.point_from_proportion(0.9), LEFT, buff=0.15)
+        qlab = T("attention", 22, ATTN, bold=True).next_to(quad.point_from_proportion(0.8), UL, buff=0.12)
         self.play(FadeIn(qlab))
         self.pause()
         fl = T("fixed-size state", 22, MAMBA, bold=True).next_to(flat.point_from_proportion(0.8), UP, buff=0.2)
@@ -43,11 +43,11 @@ class S05Ladder(Deck):
         # RNN: a domino chain that must fall in order, and a fading gradient
         x0 = -4.75
         dom = VGroup(*[RoundedRectangle(width=0.24, height=0.8, corner_radius=0.05, stroke_width=0,
-                                        fill_color=FADE, fill_opacity=0.9) for _ in range(6)]).arrange(RIGHT, buff=0.3).move_to([x0, 1.2, 0])
+                                        fill_color=FADE, fill_opacity=0.9) for _ in range(5)]).arrange(RIGHT, buff=0.3).move_to([x0, 1.2, 0])
         self.play(FadeIn(dom))
         self.play(LaggedStart(*[Rotate(d, -0.9, about_point=d.get_bottom() + RIGHT * 0.14) for d in dom], lag_ratio=0.25), run_time=1.5)
-        pulse = VGroup(*[Arrow(RIGHT * 0.28, LEFT * 0.28, buff=0, stroke_width=6, tip_length=0.14, color=PROB).set_opacity(1 - 0.17 * i)
-                         for i in range(6)]).arrange(LEFT, buff=0.1).move_to([x0, 0.15, 0])
+        pulse = VGroup(*[Arrow(RIGHT * 0.28, LEFT * 0.28, buff=0, stroke_width=6, tip_length=0.14, color=PROB).set_opacity(1 - 0.2 * i)
+                         for i in range(5)]).arrange(LEFT, buff=0.12).move_to([x0, 0.15, 0])
         self.play(LaggedStart(*[GrowArrow(a) for a in pulse], lag_ratio=0.2), run_time=1.2)
         p1 = pill("one token at a time", PROB, 19).move_to([x0, -1.0, 0])
         p2 = pill("gradients fade away", PROB, 19).move_to([x0, -1.8, 0])
@@ -126,7 +126,8 @@ class S06SSDState(Deck):
                         for o in (0.9, 0.3, 0.7, 0.5)]).arrange(DOWN, buff=0).next_to(g, LEFT, buff=0.35)
         vrow = VGroup(*[Square(cell, stroke_color=V_COL, stroke_width=2, fill_color=V_COL, fill_opacity=float(o))
                         for o in (0.4, 0.9, 0.3, 0.8, 0.6, 0.5)]).arrange(RIGHT, buff=0).next_to(g, UP, buff=0.62)
-        self.play(FadeOut(VGroup(bN, bP, lN, lP)), FadeIn(kcol, shift=RIGHT * 0.3), FadeIn(vrow, shift=DOWN * 0.3), Indicate(eq[5:7], color=V_COL),
+        self.play(FadeOut(VGroup(bN, bP, lN, lP)), run_time=0.4)
+        self.play(FadeIn(kcol, shift=RIGHT * 0.3), FadeIn(vrow, shift=DOWN * 0.3), Indicate(eq[5:7], color=V_COL),
                   steps[1].animate.scale(1.12))
         ko = [0.9, 0.3, 0.7, 0.5]; vo = [0.4, 0.9, 0.3, 0.8, 0.6, 0.5]
         layer = VGroup(*[Square(cell, stroke_width=0, fill_color=V_COL, fill_opacity=0.75 * ko[n] * vo[p]).move_to(g[n * P + p])
@@ -164,7 +165,8 @@ class S07SSDMatrix(Deck):
             veil = t.copy().set_fill(BG1, 0.0)
             wl = T(f"{w:.3g}".lstrip("0") if w < 1 else "1", 24, MAMBA2, bold=True).next_to(t, DOWN, buff=0.3)
             wlabs.add(wl)
-            self.play(t.animate.set_opacity(0.25 + 0.75 * w), FadeIn(wl, shift=UP * 0.1), run_time=0.55)
+            self.play(t[0].animate.set_stroke(opacity=0.25 + 0.75 * w), t[1].animate.set_opacity(0.25 + 0.75 * w),
+                      FadeIn(wl, shift=UP * 0.1), run_time=0.55)
         now = T("now", 20, FADE).next_to(toks[3], UP, buff=0.2)
         self.play(FadeIn(now))
         hint = M(r".3=.8\cdot.5\cdot.75", size=30, color=MAMBA2).next_to(wlabs, DOWN, buff=0.35)

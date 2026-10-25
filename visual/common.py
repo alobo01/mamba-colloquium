@@ -90,8 +90,38 @@ class _DeckMixin:
             self._chrome.add(dots)
         self.add(self._chrome)
 
+    def check_layout(self, tag=""):
+        """DECK_CHECK=1: report text boxes that overlap each other or leave the frame."""
+        if not os.environ.get("DECK_CHECK"):
+            return
+        texts = [m for m in self.mobjects for m in m.get_family() if isinstance(m, (Text, MathTex, Tex))]
+        texts = [m for m in texts if max(max(c.get_fill_opacity(), c.get_stroke_opacity()) for c in m.get_family()) > 0.35 and m.width > 0.01]
+        inner = set()
+        for m in texts:
+            for c in m.get_family()[1:]:
+                inner.add(id(c))
+        texts = [m for m in texts if id(m) not in inner]
+        W, H = config.frame_width / 2, config.frame_height / 2
+        name = type(self).__name__
+        for m in texts:
+            l, r, u, d = m.get_left()[0], m.get_right()[0], m.get_top()[1], m.get_bottom()[1]
+            if l < -W + 0.05 or r > W - 0.05 or u > H - 0.05 or d < -H + 0.05:
+                print(f"CHECK {name} {tag} OFF-FRAME  {self._label(m)}")
+        for i, a in enumerate(texts):
+            for b in texts[i + 1:]:
+                ox = min(a.get_right()[0], b.get_right()[0]) - max(a.get_left()[0], b.get_left()[0])
+                oy = min(a.get_top()[1], b.get_top()[1]) - max(a.get_bottom()[1], b.get_bottom()[1])
+                if ox > 0.04 and oy > 0.04:
+                    print(f"CHECK {name} {tag} OVERLAP    {self._label(a)}  <>  {self._label(b)}")
+
+    @staticmethod
+    def _label(m):
+        t = getattr(m, "text", None) or getattr(m, "tex_string", None) or type(m).__name__
+        return f"'{str(t)[:28]}'@({m.get_center()[0]:.1f},{m.get_center()[1]:.1f})"
+
     def pause(self, t=0.9):
         self.wait(t)
+        self.check_layout("pause")
         if hasattr(self, "next_slide"):
             self.next_slide()
 
@@ -104,6 +134,7 @@ class _DeckMixin:
         return g
 
     def clear_all(self, run_time=0.6):
+        self.check_layout("end")
         gone = [m for m in self.mobjects if m not in self._chrome.submobjects and m is not self._chrome
                 and not any(m in c.get_family() for c in self._chrome.submobjects)]
         if gone:

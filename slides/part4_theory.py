@@ -81,16 +81,16 @@ class S13Toolbox(Deck):
         ]
         tiles = VGroup()
         for name, who, model, ic, c in items:
-            fr = card(2.55, 2.95, c, 0.09, radius=0.18)
-            icn = icon(ic, c).scale(1.1).move_to(fr.get_top() + DOWN * 0.95)
-            nm = T(name, 20, c, bold=True).move_to(fr.get_center() + DOWN * 0.45)
-            w = T(who, 14, TOKEN).move_to(fr.get_center() + DOWN * 0.9)
-            m = T(model, 14, FADE).move_to(fr.get_center() + DOWN * 1.2)
+            fr = card(2.55, 2.8, c, 0.09, radius=0.18)
+            icn = icon(ic, c).scale(1.1).move_to(fr.get_top() + DOWN * 0.9)
+            nm = T(name, 20, c, bold=True).move_to(fr.get_center() + DOWN * 0.4)
+            w = T(who, 14, TOKEN).move_to(fr.get_center() + DOWN * 0.82)
+            m = T(model, 14, FADE).move_to(fr.get_center() + DOWN * 1.1)
             for t in (nm, w, m):
                 if t.width > 2.3:
                     t.scale_to_fit_width(2.3)
             tiles.add(VGroup(fr, icn, nm, w, m))
-        tiles.arrange_in_grid(2, 5, buff=0.17).move_to(DOWN * 0.45)
+        tiles.arrange_in_grid(2, 5, buff=0.17).move_to(DOWN * 0.3)
         self.play(LaggedStart(*[FadeIn(t, shift=UP * 0.3, scale=0.94) for t in tiles], lag_ratio=0.12), run_time=3.2)
         self.pause(1.6)
         self.clear_all()
@@ -110,12 +110,12 @@ class S14Frontier(Deck):
         objs = {}
         for name, x, y, c, side in pts:
             d = Dot(ax.c2p(x, y), radius=0.15, color=c)
-            lab = T(name, 22, c, bold=True).next_to(d, RIGHT if side == "r" else LEFT, buff=0.2)
+            lab = T(name, 22, c, bold=True).next_to(d, RIGHT if side == "r" else DOWN, buff=0.2)
             objs[name] = VGroup(glow(Circle(radius=0.15).move_to(d), c, 3, 2, 3), d, lab)
             self.play(FadeIn(objs[name], scale=0.7), run_time=0.7)
         hyb = Dot(ax.c2p(4.7, 7.7), radius=0.17, color=V_COL)
         hlab = VGroup(T("hybrid", 22, V_COL, bold=True), T("Mamba-2 + a few attention layers", 15, FADE)).arrange(DOWN, aligned_edge=LEFT, buff=0.04)
-        hlab.next_to(hyb, RIGHT, buff=0.25)
+        hlab.next_to(hyb, RIGHT, buff=0.25).shift(DOWN * 0.4)
         harr = Arrow(ax.c2p(3.1, 3.6), ax.c2p(4.6, 7.4), buff=0.22, color=V_COL, stroke_width=4)
         self.play(GrowArrow(harr), FadeIn(hyb, scale=0.5), FadeIn(hlab))
         # MoE: capacity without compute - its own thermometer
@@ -176,7 +176,7 @@ class S15Derivation(Deck):
                 m.scale_to_fit_width(w)
             return m.move_to([x, y, 0])
 
-        Y = [1.35, 0.1, -1.15]
+        Y = [1.45, 0.25, -1.0]
         L = [eq(r"S_t=a_t\,S_{t-1}+k_t\,v_t^\top", MAMBA2, -3.6, Y[0]),
              eq(r"S_t=\sum_{s\le t}a_{s+1}\cdots a_t\;k_s v_s^\top", MAMBA2, -3.6, Y[1]),
              eq(r"y_t=\sum_{s\le t}\underbrace{a_{s+1}\cdots a_t}_{L_{ts}}\,(q_t^\top k_s)\,v_s", MAMBA2, -3.6, Y[2])]
@@ -192,7 +192,7 @@ class S15Derivation(Deck):
 
         meet = M(r"Y=\big(L\odot QK^\top\big)V", size=56, color=RESID)
         box = SurroundingRectangle(meet, color=MAMBA2, buff=0.25, corner_radius=0.2, stroke_width=4)
-        grp = VGroup(box, meet).move_to(DOWN * 2.75)
+        grp = VGroup(box, meet).move_to(DOWN * 2.55)
         al = Arrow(L[2].get_bottom() + DOWN * 0.25, box.get_left(), buff=0.1, color=MAMBA2, stroke_width=5, path_arc=0.6)
         ar = Arrow(R[2].get_bottom() + DOWN * 0.25, box.get_right(), buff=0.1, color=ATTN, stroke_width=5, path_arc=-0.6)
         halo = glow(box, MAMBA2, 3)
@@ -219,18 +219,18 @@ class S16Interp(Deck):
         self.title("Looking inside: how we test it", RESID, accent=K_COL)
         specs = [("logit lens", "read the stream early", ATTN), ("patching", "swap a part, see what breaks", MOE),
                  ("induction heads", "copy what came next", Q_COL), ("sparse features", "split into clean parts", K_COL),
-                 ("Mamba's hidden attention", "the state as an attention map", MAMBA2)]
+                 ("hidden attention", "Mamba read as an attention map", MAMBA2)]
         tiles = VGroup()
         for name, tag, c in specs:
-            fr = card(2.5, 3.5, c, 0.09, radius=0.18)
-            nm = T(name, 19, c, bold=True).move_to(fr.get_center() + DOWN * 0.85)
-            tg = T(tag, 14, FADE).move_to(fr.get_center() + DOWN * 1.3)
+            fr = card(2.5, 3.8, c, 0.09, radius=0.18)
+            nm = T(name, 19, c, bold=True).move_to(fr.get_center() + DOWN * 1.1)
+            tg = T(tag, 14, FADE).move_to(fr.get_center() + DOWN * 1.55)
             for t in (nm, tg):
                 if t.width > 2.3:
                     t.scale_to_fit_width(2.3)
             tiles.add(VGroup(fr, nm, tg))
         tiles.arrange(RIGHT, buff=0.2).move_to(UP * 0.0 + DOWN * 0.2)
-        centre = lambda k: tiles[k][0].get_center() + UP * 0.85
+        centre = lambda k: tiles[k][0].get_center() + UP * 0.7
 
         # 1 logit lens: bars sharpen over layers
         bars = lambda hs: VGroup(*[Rectangle(width=0.22, height=h, stroke_width=0, fill_color=ATTN, fill_opacity=0.9) for h in hs]).arrange(RIGHT, buff=0.08, aligned_edge=DOWN)
@@ -249,7 +249,7 @@ class S16Interp(Deck):
         ha = heat(np.tril(np.random.default_rng(5).uniform(0.1, 1, (5, 5))), 0.26, pos=MAMBA2).move_to(centre(4))
 
         self.play(LaggedStart(*[FadeIn(t, shift=UP * 0.3) for t in tiles], lag_ratio=0.12), run_time=1.6)
-        lens.scale(1.4); patch.scale(1.3); ha.scale(1.3)
+        lens.scale(1.4); patch.scale(1.3); ha.scale(1.1)
         self.play(FadeIn(lens), FadeIn(patch), FadeIn(seq), FadeIn(sae), FadeIn(ha))
         ind_arc = ArcBetweenPoints(seq[3].get_top(), seq[1].get_top(), angle=-1.0, stroke_color=Q_COL, stroke_width=4)
         self.play(Transform(lens, bars([0.2, 0.25, 1.2, 0.3, 0.2]).move_to(centre(0)).align_to(lens, DOWN)),

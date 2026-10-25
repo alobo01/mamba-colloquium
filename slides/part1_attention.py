@@ -27,9 +27,9 @@ class S01Intro(Deck):
 
         # Theo pins every token; Manu keeps one page; Max works in tiles
         wall = VGroup(*[token_card(w.split()[-1][:6], w=0.95, h=1.1, size=15) for w in STORY]).arrange(RIGHT, buff=0.08)
-        wall.next_to(theo, UP, buff=0.3).shift(RIGHT * 0.9)
-        page = card(2.2, 1.5, MAMBA, 0.18).next_to(manu, UP, buff=0.3)
-        lines = VGroup(*[Line(LEFT * 0.8, RIGHT * 0.8, color=MAMBA, stroke_width=3).move_to(page).shift(UP * (0.45 - 0.3 * i)) for i in range(4)])
+        wall.next_to(theo, UP, buff=0.3).align_to(theo, LEFT).shift(LEFT * 0.2)
+        page = card(2.2, 1.2, MAMBA, 0.18).next_to(manu, UP, buff=0.3)
+        lines = VGroup(*[Line(LEFT * 0.8, RIGHT * 0.8, color=MAMBA, stroke_width=3).move_to(page).shift(UP * (0.36 - 0.24 * i)) for i in range(4)])
         tiles = VGroup(*[Square(0.5, stroke_color=MAMBA2, stroke_width=2, fill_color=MAMBA2, fill_opacity=0.2) for _ in range(6)])
         tiles.arrange_in_grid(2, 3, buff=0.1).next_to(maxx, UP, buff=0.4)
         self.play(*[TransformFromCopy(ribbon[i], wall[i]) for i in range(4)], FadeIn(page), FadeIn(tiles), run_time=1.4)
@@ -37,7 +37,7 @@ class S01Intro(Deck):
                   LaggedStart(*[t.animate.set_fill(opacity=0.7) for t in tiles], lag_ratio=0.15), run_time=1.6)
         self.pause()
 
-        q = chip("Where is Leo's key?", Q_COL, 26).move_to(UP * 1.9)
+        q = chip("Where is Leo's key?", Q_COL, 26).move_to(UP * 1.7)
         self.play(FadeIn(q, scale=0.8))
         halo = glow(wall[3][0], Q_COL)
         self.play(FadeIn(halo), Indicate(wall[3], color=Q_COL, scale_factor=1.25),
@@ -185,10 +185,10 @@ class S04Bank(Deck):
         self.title("Tokens evolve in the residual stream", RESID, accent=ATTN)
 
         def lane(x, sentence, hi, accent, axis_icon):
-            plane = card(6.3, 4.2, accent, 0.07).move_to([x, -0.55, 0])
+            plane = card(6.3, 4.0, accent, 0.07).move_to([x, -0.35, 0])
             parts = sentence.split(hi)
             s = VGroup(T(parts[0], 22, TOKEN), T(hi, 26, accent, bold=True), T(parts[1], 22, TOKEN)).arrange(RIGHT, buff=0.14)
-            s.move_to([x, 1.2, 0])
+            s.move_to([x, 1.35, 0])
             return plane, s
 
         lx, rx = -3.55, 3.55
@@ -216,10 +216,10 @@ class S04Bank(Deck):
         # the final residual vectors
         fl, fr = arrow(o_l, tip_l, RESID, 7), arrow(o_r, tip_r, RESID, 7)
         self.play(Create(fl), Create(fr), FadeIn(glow(Dot(tip_l), RIVER, 3)), FadeIn(glow(Dot(tip_r), FIN, 3)))
-        lab_l = T("river", 26, RIVER, bold=True).next_to(tip_l, RIGHT, buff=0.15)
-        lab_r = T("money", 26, FIN, bold=True).next_to(tip_r, RIGHT, buff=0.15)
+        lab_l = T("river", 26, RIVER, bold=True).next_to(tip_l, RIGHT, buff=0.3)
+        lab_r = T("money", 26, FIN, bold=True).next_to(tip_r, RIGHT, buff=0.3)
         self.play(FadeIn(lab_l), FadeIn(lab_r))
-        eq = M(r"r^{(\ell+1)}=r^{(\ell)}+\mathrm{block}_\ell\!\big(\mathrm{norm}\,r^{(\ell)}\big)", size=34).to_edge(DOWN, buff=0.55)
+        eq = M(r"r^{(\ell+1)}=r^{(\ell)}+\mathrm{block}_\ell\!\big(\mathrm{norm}\,r^{(\ell)}\big)", size=34).to_edge(DOWN, buff=0.45)
         self.play(Write(eq))
         self.pause(1.6)
         self.clear_all()

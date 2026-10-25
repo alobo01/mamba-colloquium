@@ -12,7 +12,7 @@ class S09FFN(Deck):
     def construct(self):
         self.title("Why a feed-forward network?", MOE)
         names = ["Leo", "hid", "the", "key", "under"]
-        toks = VGroup(*[chip(n, TOKEN, 24) for n in names]).arrange(RIGHT, buff=0.7).move_to(UP * 2.0 + DOWN * 0.2)
+        toks = VGroup(*[chip(n, TOKEN, 24) for n in names]).arrange(RIGHT, buff=0.7).move_to(UP * 1.5)
         self.play(LaggedStart(*[FadeIn(t, shift=DOWN * 0.2) for t in toks], lag_ratio=0.1))
 
         # attention: tokens talk to each other
@@ -64,7 +64,7 @@ class S10MoE(Deck):
     def construct(self):
         self.title("MoE: a hospital with specialist rooms", MOE)
         n = 8
-        building = card(12.9, 2.9, MOE, 0.05, radius=0.3, sw=2).move_to(UP * 1.3)
+        building = card(12.9, 2.9, MOE, 0.05, radius=0.3, sw=2).move_to(UP * 0.95)
         rooms = VGroup(*[card(1.25, 1.7, c, 0.14, radius=0.16, sw=2.5) for c in ROOM]).arrange(RIGHT, buff=0.24).move_to(building)
         for r, c, k in zip(rooms, ROOM, range(n)):
             sym = [Circle(radius=0.2), Triangle().scale(0.22), Square(0.36), Star(5, outer_radius=0.24, inner_radius=0.11),
@@ -78,14 +78,14 @@ class S10MoE(Deck):
         plus = VGroup(RoundedRectangle(width=0.16, height=0.52, corner_radius=0.04, stroke_width=0, fill_color=MOE, fill_opacity=1),
                       RoundedRectangle(width=0.52, height=0.16, corner_radius=0.04, stroke_width=0, fill_color=MOE, fill_opacity=1))
         nurse = VGroup(Circle(radius=0.5, stroke_color=MOE, stroke_width=4, fill_color=MOE, fill_opacity=0.2),
-                       plus).move_to(LEFT * 3.2 + DOWN * 1.6)
+                       plus).move_to(LEFT * 3.2 + DOWN * 1.35)
         nurse_t = T("router", 22, MOE, bold=True).next_to(nurse, DOWN, buff=0.15)
         self.play(FadeIn(nurse), FadeIn(nurse_t))
         self.pause()
 
         picks = [([1, 4], "Leo"), ([2, 6], "key"), ([0, 4], "bridge")]
         for idx, (pk, word) in enumerate(picks):
-            pt = chip(word, TOKEN, 22).move_to(LEFT * 6.0 + DOWN * 1.6)
+            pt = chip(word, TOKEN, 22).move_to(LEFT * 6.0 + DOWN * 1.35)
             self.play(pt.animate.next_to(nurse, LEFT, buff=0.2), run_time=0.5)
             lines, anims = VGroup(), []
             for j, wgt in zip(pk, (0.6, 0.4)):
@@ -95,12 +95,12 @@ class S10MoE(Deck):
             dim = [rooms[j].animate.fade(0.7) for j in range(n) if j not in pk]
             self.play(*[Create(l) for l in lines], *anims, *dim, run_time=0.8)
             if idx == 0:
-                eq = M(r"y=\sum_{i\in\text{top-}k} g_i\,E_i(x)", size=36, color=MOE).move_to(RIGHT * 3.6 + DOWN * 1.7)
+                eq = M(r"y=\sum_{i\in\text{top-}k} g_i\,E_i(x)", size=36, color=MOE).move_to(RIGHT * 3.6 + DOWN * 1.45)
                 self.play(Write(eq))
             self.play(FadeOut(lines), FadeOut(pt), *[Restore(r) for r in rooms], run_time=0.5)
         self.pause()
 
-        b1 = pill("8 rooms built", MOE, 24).move_to(LEFT * 4.2 + DOWN * 3.05)
+        b1 = pill("8 rooms built", MOE, 24).move_to(LEFT * 3.2 + DOWN * 3.05)
         b2 = pill("only 2 open per token", MAMBA2, 24, filled=True).move_to(RIGHT * 3.4 + DOWN * 3.05)
         self.play(FadeIn(b1, shift=UP * 0.2), FadeIn(b2, shift=UP * 0.2))
         self.pause(1.4)
