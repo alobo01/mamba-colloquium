@@ -1,6 +1,6 @@
 """Numerical contract for every SSD / attention identity shown on screen.
 
-Run before rendering S06–S08 or S15:
+Run before rendering slides 07, 17, 19 and 22 (they import these functions):
 
     python -I math_contracts/test_ssd_equivalence.py      # plain
     python -m pytest math_contracts                         # or with pytest
@@ -148,3 +148,24 @@ if __name__ == "__main__":
         fn()
         print(f"PASS  {fn.__name__}")
     print(f"{len(tests)} SSD contract tests passed")
+
+
+# ------------------------------------------------------- slide 17: parity
+def scalar_state(a, s0=1.0):
+    """s_T = (prod_t a_t) s_0 for a scalar state with no input."""
+    return float(np.prod(a)) * s0
+
+
+def test_negative_decay_computes_parity():
+    rng = np.random.default_rng(5)
+    for _ in range(50):
+        bits = rng.integers(0, 2, size=rng.integers(1, 40))
+        a = np.where(bits == 1, -1.0, 1.0)
+        assert scalar_state(a) == (-1.0) ** bits.sum()
+
+
+def test_nonnegative_decay_keeps_sign():
+    rng = np.random.default_rng(6)
+    for _ in range(50):
+        a = rng.uniform(0, 1, size=rng.integers(1, 40))
+        assert scalar_state(a) >= 0           # can fade, never flip: parity is out of reach

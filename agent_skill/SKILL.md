@@ -1,6 +1,6 @@
 ---
 name: three-brothers-manim-talk
-description: Build, fix or extend the "Three Brothers" Manim talk on Transformers, Mamba-1, Mamba-2, MoE and interpretability. Use when editing slides/*.py, visual/common.py, TALK_SCRIPT.md, or rendering the deck/video.
+description: Build, fix or extend the "Three Brothers" Manim talk on Transformers, Mamba-1, Mamba-2, MoE and interpretability. Use when editing slides/sNN_*.py, visual/*.py, TALK_SCRIPT.md, or rendering the deck/video.
 ---
 
 # Three Brothers: Manim production skill
@@ -14,27 +14,44 @@ description: Build, fix or extend the "Three Brothers" Manim talk on Transformer
 ## Environment
 
 - Python venv with `manim==0.19.0`, `manim-slides`, `numpy`, `pytest`. System packages: FFmpeg, `libpango1.0-dev`, a LaTeX distribution with `dvisvgm`, the Inter font.
-- `python -m pytest math_contracts` must pass before rendering S06–S08 or S15. Those slides import the tested reference functions, so the numbers on screen are the tested numbers.
+- `python -m pytest math_contracts` must pass before rendering slides 07, 17, 19 and 22. Those slides import the tested reference functions, so the numbers on screen are the tested numbers.
 
 ## Layout of the code
 
-- `visual/common.py`: palette (Q cyan, K purple, V yellow, residual white, attention blue, Mamba coral, Mamba-2 mint, MoE gold), the `Deck` base class (backdrop, progress dots, `title()`, `pause()`, `clear_all()`), and shared mobjects (`brother`, `card`, `pill`, `chip`, `token_card`, `heat`, `glow`, `arrow`).
-- `slides/part1_attention.py` … `part4_theory.py`: one class per slide, `S01Intro` … `S16Interp`. Each scene builds its own objects; nothing is shared between scenes.
+- **One slide = one file** `slides/sNN_name.py` with one scene class `SNNName(Deck)`. The module docstring names the slide, its sources and its click map (▶1, ▶2, …), which must match `TALK_SCRIPT.md`.
+- Inside a slide file:
+  - `build_*` functions return mobjects and never animate;
+  - `animate_*(scene: Deck, ...)` functions play one beat and return whatever later beats need;
+  - `construct()` is only a sequence of those calls separated by `self.pause()`.
+- `visual/`:
+  - `theme.py`: the palette;
+  - `equations.py`: `ceq`, `morph`, `collapse`, `residual_eq`;
+  - `shapes.py`;
+  - `characters.py`;
+  - `deck.py`: `Deck`, with `title()`, `pause()`, `clear_body()`, `clear_all()` and `check_layout()`.
 - `Deck.pause()` is one presenter click. In video mode it is a short hold; with `MANIM_DECK=slides` it becomes `next_slide()`.
+- Progress dots count the slide files automatically. Adding `s25_*.py` adds a dot.
 
-## Style rules
+## Equations
 
-- No captions, subtitles, badges or warning boxes on screen. Slides carry labels and equations only; explanations live in `TALK_SCRIPT.md`.
-- One idea per slide, at most one primary equation on screen at a time.
-- Keep the slide count and runtime small (16 slides, about 20 s each); cut before adding.
+- Build every equation with `ceq(*parts)`, one symbol per part. The colour comes from the leading symbol:
+  - q/Q/c cyan, k/K/b purple, v/V/x yellow;
+  - S/h/s coral (state), a/L/γ/Δ mint (decay);
+  - softmax and W blue.
+  - Override a part with `(tex, colour)`.
+- Derivations use two moves:
+  - `morph(scene, src, dst, bring={j: mobject})` rewrites a line in place, and the substituted piece flies into slot `j`;
+  - `collapse(scene, lines, result)` replaces all the lines with the boxed result.
+  - Slides 07 and 19 are the reference examples.
 
 ## Commands
 
 ```bash
-scripts/render.sh l slides/part2_mamba.py S07SSDMatrix                        # one slide, 480p15, logs in media/logs/
-scripts/contact_sheet.sh media/videos/part2_mamba/480p15/S07SSDMatrix.mp4 /tmp/s07.png 12   # visual QA grid
+scripts/render.sh l slides/s07_ssd_unroll.py                                   # one slide, 480p15, logs in media/logs/
+DECK_CHECK=1 scripts/render.sh l                                               # every slide + overlap/off-frame report in the logs
+scripts/contact_sheet.sh media/videos/s07_ssd_unroll/480p15/S07SSDUnroll.mp4 /tmp/s07.png 12   # visual QA grid
 scripts/build_video.sh m                                                       # all slides at 720p30 + concat → media/final/
-MANIM_DECK=slides manim-slides render slides/part1_attention.py S01Intro S02QKV
+MANIM_DECK=slides manim-slides render slides/s07_ssd_unroll.py S07SSDUnroll
 ```
 
 ## Production loop (mandatory)
@@ -52,3 +69,6 @@ MANIM_DECK=slides manim-slides render slides/part1_attention.py S01Intro S02QKV
 - FlashAttention is exact and IO-aware, not subquadratic. GQA still caches O(T) positions.
 - Heads, experts and features have no guaranteed semantic labels.
 - The Mamba state moves along time within a layer; the residual stream moves along depth.
+- Lower bounds (slides 15–17) are about exact recall, selective copying and state tracking. They are not claims that Mamba is worse on average.
+- Universality (slide 18) means approximation in the limit; it says nothing about size.
+- The representation curves on slide 22 are schematic. The numbers on slides 14, 16 and 20 come from the cited papers.
